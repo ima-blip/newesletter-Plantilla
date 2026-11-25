@@ -9,9 +9,29 @@ class ArticleController {
     this.store = store;
     this.simulatedReaderMode = null; // null = use actual user role; 'freemium' | 'pro'
     this.ultimaNoticiaPublicada = null;
+    this._noticiaEspecifica = false;
+  }
+
+  async abrirNoticia(idNoticia) {
+    if (typeof window !== 'undefined' && window.apiService) {
+      try {
+        const res = await window.apiService.obtenerNoticia(idNoticia);
+        if (res && res.exito && res.datos) {
+          this.ultimaNoticiaPublicada = res.datos;
+          this._noticiaEspecifica = true;
+        }
+      } catch (e) {}
+    }
+    if (window.app) {
+      window.app.navegarA('noticia');
+    }
   }
 
   async cargarUltimaNoticiaPublicada() {
+    if (this._noticiaEspecifica && this.ultimaNoticiaPublicada) {
+      this._noticiaEspecifica = false;
+      return this.ultimaNoticiaPublicada;
+    }
     if (typeof window !== 'undefined' && window.apiService) {
       try {
         const res = await window.apiService.obtenerUltimaNoticiaPublicada();

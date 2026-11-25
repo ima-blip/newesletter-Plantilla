@@ -117,10 +117,18 @@ class AppController {
     if (!contenedor) return;
 
     switch (ruta) {
-      case 'portada-noticias':
-        contenedor.innerHTML = window.views.HomeView.render(this.store);
+      case 'portada-noticias': {
+        let noticiasPublicadas = [];
+        if (window.apiService) {
+          const resPortada = await window.apiService.listarNoticias({ estado: 'publicado' });
+          if (resPortada && resPortada.exito && Array.isArray(resPortada.datos)) {
+            noticiasPublicadas = resPortada.datos;
+          }
+        }
+        contenedor.innerHTML = window.views.HomeView.render(this.store, noticiasPublicadas);
         window.views.HomeView.attachEvents(this);
         break;
+      }
 
       case 'noticia': {
         await this.articleController.cargarUltimaNoticiaPublicada();
@@ -203,9 +211,17 @@ class AppController {
         break;
       }
 
-      default:
-        contenedor.innerHTML = window.views.HomeView.render(this.store);
+      default: {
+        let noticiasPublicadas = [];
+        if (window.apiService) {
+          const resPortada = await window.apiService.listarNoticias({ estado: 'publicado' });
+          if (resPortada && resPortada.exito && Array.isArray(resPortada.datos)) {
+            noticiasPublicadas = resPortada.datos;
+          }
+        }
+        contenedor.innerHTML = window.views.HomeView.render(this.store, noticiasPublicadas);
         window.views.HomeView.attachEvents(this);
+      }
     }
   }
 

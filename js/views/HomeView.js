@@ -6,9 +6,27 @@
 window.views = window.views || {};
 
 window.views.HomeView = {
-  render(store) {
+  _escapeHtml(text) {
+    if (!text) return '';
+    return String(text)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  },
+
+  render(store, noticiasPublicadas = []) {
     const user = store.usuarioActual;
     const esPro = user && (user.esMecenasPro() || user.esAdmin());
+    const listaNoticias = Array.isArray(noticiasPublicadas) ? noticiasPublicadas : [];
+    const hero = listaNoticias[0] || null;
+    const defaultImg = 'https://lh3.googleusercontent.com/aida-public/AB6AXuC9aCaA8iQUBJmqEty_GBZHdunmIKqv3EEZ9__WcBqp4j31Gz6lAw3ImPAq0n8mNA8LlvRa-ol06CfZBDCMl5LGtDo-mj8AZ_e0TzUWESX-UrF7Is3PYv1nGvb1OyvLWj-D_DMO5bCLCPEI_r2LwsTSbQQa7uqR_nY5rVRvS--Q_zWLeUBXKPWdQ2QbZUixyUoR_FRA3MuJ_e_BP8ffjc8MWPJp96WkBExTE0d6OnE';
+    const heroImg = (hero && hero.imagen_url) ? this._escapeHtml(hero.imagen_url) : defaultImg;
+    const heroTitulo = hero ? this._escapeHtml(hero.titulo) : 'La economía de la atención y el retorno al texto';
+    const heroSubtitulo = hero ? this._escapeHtml(hero.subtitulo || hero.categoria || 'Informe Especial') : 'Informe Especial // Estructura Monetaria';
+    const heroExtracto = hero ? this._escapeHtml(hero.extracto || (hero.contenido || '').slice(0, 220) + '...') : 'Entre el agotamiento dopamínico del scroll perpetuo y la mercantilización del clic, la palabra escrita en reposo renace como un refugio de resistencia cognitiva y soberanía crítica.';
+    const heroAutor = hero ? this._escapeHtml(hero.autor_nombre || 'Equipo Editorial') : 'Víctor M. Fernández & Equipo Atelier';
+    const heroFecha = hero && hero.fecha_publicacion ? new Date(hero.fecha_publicacion).toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Noviembre 2026';
 
     return `
       <div class="flex flex-col w-full pt-28">
@@ -45,32 +63,29 @@ window.views.HomeView = {
             <!-- HERO STORY (8 COLUMNAS) -->
             <article class="lg:col-span-8 flex flex-col bg-surface-container-lowest rounded-xl overflow-hidden shadow-md group transition-all duration-300 hover:shadow-xl border border-outline-variant/30">
               <div class="relative w-full h-80 sm:h-[420px] overflow-hidden bg-surface-container">
-                <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Fotografía de investigación documental" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9aCaA8iQUBJmqEty_GBZHdunmIKqv3EEZ9__WcBqp4j31Gz6lAw3ImPAq0n8mNA8LlvRa-ol06CfZBDCMl5LGtDo-mj8AZ_e0TzUWESX-UrF7Is3PYv1nGvb1OyvLWj-D_DMO5bCLCPEI_r2LwsTSbQQa7uqR_nY5rVRvS--Q_zWLeUBXKPWdQ2QbZUixyUoR_FRA3MuJ_e_BP8ffjc8MWPJp96WkBExTE0d6OnE"/>
+                <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Fotografía de investigación documental" src="${heroImg}"/>
                 <div class="absolute inset-0 bg-gradient-to-t from-inverse-surface/90 via-inverse-surface/20 to-transparent"></div>
                 
                 <div class="absolute top-space-md left-space-md flex flex-wrap items-center gap-space-xs">
                   <span class="font-label-badge text-label-badge uppercase px-3 py-1 rounded-full bg-inverse-surface text-inverse-on-surface backdrop-blur-md">
-                    Suscriptores
+                    ${hero && hero.es_premium ? 'Mecenas PRO' : 'Acceso Abierto'}
                   </span>
                   <span class="font-label-badge text-label-badge uppercase px-3 py-1 rounded-full bg-surface-container-lowest/90 text-on-surface backdrop-blur-md">
-                    Noviembre 2026
-                  </span>
-                  <span class="font-label-badge text-label-badge uppercase px-3 py-1 rounded-full bg-surface-container-lowest/90 text-on-surface backdrop-blur-md flex items-center gap-1">
-                    <span class="material-symbols-outlined text-[13px]">schedule</span> 9 min de lectura
+                    ${heroFecha}
                   </span>
                 </div>
 
                 <div class="absolute bottom-space-md left-space-md right-space-md text-inverse-on-surface">
-                  <span class="font-metadata text-metadata text-inverse-primary uppercase tracking-widest block mb-1">Informe Especial // Estructura Monetaria</span>
-                  <h1 onclick="window.app.navegarA('noticia')" class="font-display-hero text-display-hero text-inverse-on-surface tracking-tight leading-none mb-2 hover:text-inverse-primary transition-colors cursor-pointer">
-                    La economía de la atención y el retorno al texto
+                  <span class="font-metadata text-metadata text-inverse-primary uppercase tracking-widest block mb-1">${heroSubtitulo}</span>
+                  <h1 onclick="${hero ? `window.app.articleController.abrirNoticia(${hero.id_noticia})` : `window.app.navegarA('noticia')`}" class="font-display-hero text-display-hero text-inverse-on-surface tracking-tight leading-none mb-2 hover:text-inverse-primary transition-colors cursor-pointer">
+                    ${heroTitulo}
                   </h1>
                 </div>
               </div>
 
               <div class="p-space-lg flex flex-col gap-space-md bg-surface-container-lowest">
                 <p class="font-body-lead text-body-lead text-on-surface-variant leading-relaxed">
-                  Entre el agotamiento dopamínico del scroll perpetuo y la mercantilización del clic, la palabra escrita en reposo renace como un refugio de resistencia cognitiva y soberanía crítica. Un análisis sobre el modelo modular freemium/premium y la desintermediación del periodismo de fondo.
+                  ${heroExtracto}
                 </p>
                 
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm pt-space-xs border-t border-outline-variant/20">
@@ -79,12 +94,12 @@ window.views.HomeView = {
                       AD
                     </div>
                     <div class="flex flex-col">
-                      <span class="font-metadata text-metadata font-bold uppercase tracking-wider text-on-surface">Víctor M. Fernández &amp; Equipo Atelier</span>
-                      <span class="font-metadata text-metadata text-on-surface-variant">Crítica cultural &amp; finanzas cuantitativas</span>
+                      <span class="font-metadata text-metadata font-bold uppercase tracking-wider text-on-surface">${heroAutor}</span>
+                      <span class="font-metadata text-metadata text-on-surface-variant">${hero ? this._escapeHtml(hero.categoria || 'Edición Actual') : 'Crítica cultural & finanzas cuantitativas'}</span>
                     </div>
                   </div>
                   
-                  <button onclick="window.app.navegarA('noticia')" class="inline-flex items-center justify-center gap-space-xs font-label-badge text-label-badge uppercase px-space-md py-3 rounded-full bg-primary text-on-primary hover:bg-primary-container transition-all shadow-sm">
+                  <button onclick="${hero ? `window.app.articleController.abrirNoticia(${hero.id_noticia})` : `window.app.navegarA('noticia')`}" class="inline-flex items-center justify-center gap-space-xs font-label-badge text-label-badge uppercase px-space-md py-3 rounded-full bg-primary text-on-primary hover:bg-primary-container transition-all shadow-sm">
                     <span>Leer Reportaje Completo</span>
                     <span class="material-symbols-outlined text-[16px]">menu_book</span>
                   </button>
@@ -154,6 +169,65 @@ window.views.HomeView = {
               </div>
             </aside>
           </div>
+        </section>
+
+        <!-- SECCIÓN: TODAS LAS NOTICIAS PUBLICADAS -->
+        <section class="w-full max-w-7xl mx-auto px-margin pb-space-xl">
+          <div class="flex items-center justify-between mb-space-md pt-space-md border-t border-outline-variant/20">
+            <div class="flex items-center gap-space-xs">
+              <span class="font-metadata text-metadata font-bold uppercase tracking-widest text-primary">02 // Archivo Reciente</span>
+              <span class="w-8 h-[2px] bg-primary/40"></span>
+              <h2 class="font-headline-sm text-headline-sm uppercase text-on-surface">Últimas Noticias Publicadas</h2>
+            </div>
+            <span class="font-metadata text-metadata text-outline">${listaNoticias.length} publicaciones disponibles</span>
+          </div>
+
+          ${listaNoticias.length > 0 ? `
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-md">
+              ${listaNoticias.map(n => `
+                <article onclick="window.app.articleController.abrirNoticia(${n.id_noticia})" class="flex flex-col justify-between bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-outline-variant/30 cursor-pointer group">
+                  <div>
+                    ${n.imagen_url ? `
+                      <div class="w-full h-44 overflow-hidden bg-surface-container">
+                        <img src="${this._escapeHtml(n.imagen_url)}" alt="${this._escapeHtml(n.titulo)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      </div>
+                    ` : ''}
+                    <div class="p-space-md flex flex-col gap-space-xs">
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="font-label-badge text-[10px] uppercase px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-bold">
+                          ${this._escapeHtml(n.categoria || 'General')}
+                        </span>
+                        ${n.es_premium ? `
+                          <span class="font-label-badge text-[10px] uppercase px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-bold flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[12px]">${esPro ? 'lock_open' : 'lock'}</span>
+                            PRO
+                          </span>
+                        ` : `
+                          <span class="font-label-badge text-[10px] uppercase px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-bold">
+                            Abierta
+                          </span>
+                        `}
+                      </div>
+                      <h3 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors line-clamp-2">
+                        ${this._escapeHtml(n.titulo)}
+                      </h3>
+                      <p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-3">
+                        ${this._escapeHtml(n.extracto || n.subtitulo || (n.contenido || '').slice(0, 140) + '...')}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="px-space-md py-space-sm border-t border-outline-variant/20 flex items-center justify-between text-[11px] font-metadata text-outline">
+                    <span>${this._escapeHtml(n.autor_nombre || 'Redacción')}</span>
+                    <span>${n.fecha_publicacion ? new Date(n.fecha_publicacion).toLocaleDateString('es-CL') : 'Reciente'}</span>
+                  </div>
+                </article>
+              `).join('')}
+            </div>
+          ` : `
+            <div class="p-space-lg rounded-2xl bg-surface-container-low text-center text-on-surface-variant font-body-sm border border-outline-variant/30">
+              No hay noticias publicadas aún. Crea y publica una desde la consola editorial.
+            </div>
+          `}
         </section>
 
         <!-- SECCIÓN: CAPTURA DE NEWSLETTER (RF-01) -->
