@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Atelier Dispatch • Newsletter Modular Freemium / Premium (MVC)</title>
+  
+  <!-- Google Fonts: Space Grotesk, Newsreader & Material Symbols -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-container-lowest": "#ffffff",
+            "tertiary": "#ba0035",
+            "on-error": "#ffffff",
+            "surface-container-highest": "#d3e4fe",
+            "outline": "#707881",
+            "secondary-container": "#dae2fd",
+            "tertiary-fixed": "#ffdada",
+            "secondary-fixed": "#dae2fd",
+            "on-secondary-fixed-variant": "#3f465c",
+            "primary-fixed": "#cce5ff",
+            "on-primary-fixed": "#001d31",
+            "error": "#ba1a1a",
+            "on-secondary-container": "#5c647a",
+            "on-tertiary-fixed-variant": "#920028",
+            "surface-dim": "#cbdbf5",
+            "surface-container-low": "#eff4ff",
+            "inverse-surface": "#213145",
+            "outline-variant": "#bfc7d2",
+            "on-primary-fixed-variant": "#004b73",
+            "on-secondary": "#ffffff",
+            "surface-variant": "#d3e4fe",
+            "on-background": "#0b1c30",
+            "on-tertiary-fixed": "#40000c",
+            "on-tertiary-container": "#fffbff",
+            "on-surface-variant": "#3f4850",
+            "secondary-fixed-dim": "#bec6e0",
+            "on-primary": "#ffffff",
+            "background": "#f8f9ff",
+            "on-primary-container": "#fdfcff",
+            "inverse-on-surface": "#eaf1ff",
+            "surface": "#f8f9ff",
+            "tertiary-container": "#e21e49",
+            "on-surface": "#0b1c30",
+            "tertiary-fixed-dim": "#ffb3b6",
+            "surface-container": "#e5eeff",
+            "inverse-primary": "#93ccff",
+            "surface-tint": "#006398",
+            "error-container": "#ffdad6",
+            "secondary": "#565e74",
+            "surface-bright": "#f8f9ff",
+            "surface-container-high": "#dce9ff",
+            "primary": "#006194",
+            "primary-container": "#007bb9",
+            "on-secondary-fixed": "#131b2e",
+            "primary-fixed-dim": "#93ccff",
+            "on-error-container": "#93000a",
+            "on-tertiary": "#ffffff"
+          },
+          borderRadius: {
+            DEFAULT: "1rem",
+            lg: "2rem",
+            xl: "3rem",
+            full: "9999px"
+          },
+          spacing: {
+            margin: "2rem",
+            "space-xs": "0.375rem",
+            "space-md": "1.25rem",
+            "space-lg": "2rem",
+            "space-sm": "0.75rem",
+            "space-xl": "3.5rem",
+            gutter: "1.5rem"
+          },
+          fontFamily: {
+            "display-hero-mobile": ["Space Grotesk", "sans-serif"],
+            "body-lead": ["Newsreader", "serif"],
+            "headline-md": ["Space Grotesk", "sans-serif"],
+            "display-hero": ["Space Grotesk", "sans-serif"],
+            metadata: ["Space Grotesk", "sans-serif"],
+            "headline-lg-mobile": ["Space Grotesk", "sans-serif"],
+            "label-badge": ["Space Grotesk", "sans-serif"],
+            "body-sm": ["Space Grotesk", "sans-serif"],
+            "body-md": ["Newsreader", "serif"],
+            "headline-sm": ["Space Grotesk", "sans-serif"],
+            "headline-lg": ["Space Grotesk", "sans-serif"]
+          },
+          fontSize: {
+            "display-hero-mobile": ["32px", { lineHeight: "38px", letterSpacing: "-0.02em", fontWeight: "700" }],
+            "body-lead": ["21px", { lineHeight: "34px", letterSpacing: "-0.005em", fontWeight: "400" }],
+            "headline-md": ["24px", { lineHeight: "30px", letterSpacing: "-0.02em", fontWeight: "700" }],
+            "display-hero": ["52px", { lineHeight: "58px", letterSpacing: "-0.03em", fontWeight: "700" }],
+            metadata: ["11px", { lineHeight: "16px", letterSpacing: "0.06em", fontWeight: "500" }],
+            "headline-lg-mobile": ["26px", { lineHeight: "32px", letterSpacing: "-0.015em", fontWeight: "700" }],
+            "label-badge": ["10px", { lineHeight: "12px", letterSpacing: "0.08em", fontWeight: "700" }],
+            "body-sm": ["14px", { lineHeight: "20px", letterSpacing: "0em", fontWeight: "400" }],
+            "body-md": ["17px", { lineHeight: "28px", letterSpacing: "0em", fontWeight: "400" }],
+            "headline-sm": ["19px", { lineHeight: "24px", letterSpacing: "-0.01em", fontWeight: "700" }],
+            "headline-lg": ["36px", { lineHeight: "42px", letterSpacing: "-0.025em", fontWeight: "700" }]
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    @layer base {
+      html, body {
+        margin: 0;
+        padding: 0;
+        background-color: #f8f9ff;
+        color: #0b1c30;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-surface font-body-md text-on-surface antialiased min-h-screen flex flex-col justify-between">
+
+  <!-- CONTENEDOR DE LA BARRA DE NAVEGACIÓN (NavbarView) -->
+  <div id="app-navbar-container"></div>
+
+  <!-- CONTENEDOR PRINCIPAL REACTIVO DE VISTAS (HomeView, ArticleView, etc.) -->
+  <main id="app-main-content" class="flex-grow w-full"></main>
+
+  <!-- NOTIFICACIÓN GLOBAL TIPO TOAST -->
+  <div id="global-toast" class="hidden fixed bottom-6 right-6 z-50 px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 transition-all duration-300 opacity-0 translate-y-4">
+    <span class="material-symbols-outlined text-[20px]" id="global-toast-icon">info</span>
+    <span class="font-body-sm text-sm font-medium" id="global-toast-msg">Mensaje de notificación</span>
+  </div>
+
+  <!-- PIE DE PÁGINA GLOBAL -->
+  <footer class="w-full bg-surface-container-low mt-space-xl border-t border-outline-variant/30">
+    <div class="max-w-7xl mx-auto px-margin py-space-lg flex flex-col lg:flex-row justify-between items-start gap-space-lg">
+      <div class="flex flex-col gap-space-xs max-w-md">
+        <span class="font-headline-sm text-headline-sm uppercase tracking-tight text-on-surface">Atelier Dispatch</span>
+        <span class="font-metadata text-metadata uppercase tracking-widest text-primary">Publicación Digital &amp; Boletín Editorial</span>
+        <p class="font-body-sm text-body-sm text-on-surface-variant mt-space-xs">
+          Periodismo independiente, reportajes en profundidad y análisis cultural sin publicidad invasiva.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-space-lg">
+        <div class="flex flex-col gap-space-xs">
+          <span class="font-metadata text-metadata uppercase text-on-surface tracking-wider font-bold">Navegación</span>
+          <a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer" onclick="window.app.navegarA('portada-noticias')">Portada</a>
+          <a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer" onclick="window.app.navegarA('noticia')">Ensayo &amp; Lectura</a>
+          <a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer" onclick="window.app.navegarA('portal-suscripcion')">Membresía PRO</a>
+          <a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer" onclick="window.app.navegarA('iniciar-sesion')">Iniciar Sesión</a>
+        </div>
+        <div class="flex flex-col gap-space-xs" id="footer-admin-links">
+          <span class="font-metadata text-metadata uppercase text-on-surface tracking-wider font-bold">Administración</span>
+          <a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer" onclick="window.app.navegarA('consola-audiencias')">Audiencias</a>
+          <a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer" onclick="window.app.navegarA('consola-noticias')">Noticias &amp; Bloques</a>
+          <a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer" onclick="window.app.navegarA('consola-paywall')">Envío &amp; Meta PRO</a>
+        </div>
+        <div class="flex flex-col gap-space-xs">
+          <span class="font-metadata text-metadata uppercase text-on-surface tracking-wider font-bold">Legal &amp; Contacto</span>
+          <span class="font-body-sm text-body-sm text-on-surface-variant">Términos de Uso</span>
+          <span class="font-body-sm text-body-sm text-on-surface-variant">Política de Privacidad</span>
+          <span class="font-body-sm text-body-sm text-on-surface-variant">contacto@atelierdispatch.demo</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-margin py-space-md border-t border-outline-variant/20 flex flex-col sm:flex-row justify-between items-center gap-space-xs">
+      <span class="font-metadata text-metadata text-on-surface-variant">© 2026 Atelier Dispatch • Sitio de demostración</span>
+      <span class="font-metadata text-metadata text-on-surface-variant">Todos los derechos reservados</span>
+    </div>
+  </footer>
+
+  <!-- CARGA DE SCRIPTS MVC EN ORDEN ESTRICTO -->
+
+  <!-- 1. MODELOS (Domain Entities & State) -->
+  <script src="js/models/Rol.js"></script>
+  <script src="js/models/Usuario.js"></script>
+  <script src="js/models/BloqueContenido.js"></script>
+  <script src="js/models/Newsletter.js"></script>
+  <script src="js/models/Suscripcion.js"></script>
+  <script src="js/models/PagoSimulado.js"></script>
+  <script src="js/models/EnvioNewsletter.js"></script>
+  <script src="js/models/AppStore.js"></script>
+
+  <!-- 1.5. SERVICIOS (API REST / Django + MySQL / Fallback Offline) -->
+  <script src="js/services/ApiService.js"></script>
+
+  <!-- 2. CONTROLADORES (Business Logic & Event Handlers) -->
+  <script src="js/controllers/AuthController.js"></script>
+  <script src="js/controllers/ArticleController.js"></script>
+  <script src="js/controllers/SubscriptionController.js"></script>
+  <script src="js/controllers/EditorController.js"></script>
+  <script src="js/controllers/AdminController.js"></script>
+  <script src="js/controllers/NoticiasController.js"></script>
+  <script src="js/controllers/AppController.js"></script>
+
+  <!-- 3. VISTAS (UI Presentation & DOM Event Binding) -->
+  <script src="js/views/NavbarView.js"></script>
+  <script src="js/views/HomeView.js"></script>
+  <script src="js/views/ArticleView.js"></script>
+  <script src="js/views/SubscriptionView.js"></script>
+  <script src="js/views/AuthView.js"></script>
+  <script src="js/views/AdminEditorView.js"></script>
+  <script src="js/views/AdminAudienciasView.js"></script>
+  <script src="js/views/AdminPaywallView.js"></script>
+  <script src="js/views/NoticiasAdminView.js"></script>
+  <script src="js/views/AccessDeniedView.js"></script>
+
+  <!-- 4. BOOTSTRAP DE APLICACIÓN -->
+  <script src="js/app.js"></script>
+</body>
+</html>
