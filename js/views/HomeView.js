@@ -19,6 +19,9 @@ window.views.HomeView = {
     const user = store.usuarioActual;
     const esPro = user && (user.esMecenasPro() || user.esAdmin());
     const listaNoticias = Array.isArray(noticiasPublicadas) ? noticiasPublicadas : [];
+    const noticiasPro = listaNoticias.filter(n => n.es_premium);
+    const pro1 = noticiasPro[0] || null;
+    const pro2 = noticiasPro[1] || noticiasPro[0] || null;
     const hero = listaNoticias[0] || null;
     const defaultImg = 'https://lh3.googleusercontent.com/aida-public/AB6AXuC9aCaA8iQUBJmqEty_GBZHdunmIKqv3EEZ9__WcBqp4j31Gz6lAw3ImPAq0n8mNA8LlvRa-ol06CfZBDCMl5LGtDo-mj8AZ_e0TzUWESX-UrF7Is3PYv1nGvb1OyvLWj-D_DMO5bCLCPEI_r2LwsTSbQQa7uqR_nY5rVRvS--Q_zWLeUBXKPWdQ2QbZUixyUoR_FRA3MuJ_e_BP8ffjc8MWPJp96WkBExTE0d6OnE';
     const heroImg = (hero && hero.imagen_url) ? this._escapeHtml(hero.imagen_url) : defaultImg;
@@ -120,7 +123,7 @@ window.views.HomeView = {
               <!-- LISTA COMPACTA DE ARTÍCULOS DESTACADOS -->
               <div class="flex flex-col gap-space-sm">
                 <!-- Item 1 -->
-                <article onclick="window.app.navegarA('noticia')" class="p-space-md bg-surface-container-lowest rounded-xl shadow-sm hover:shadow-md transition-shadow group flex flex-col gap-space-xs cursor-pointer border border-outline-variant/20">
+                <article onclick="${pro1 ? `window.app.articleController.abrirNoticia(${pro1.id_noticia})` : `window.app.navegarA('noticia')`}" class="p-space-md bg-surface-container-lowest rounded-xl shadow-sm hover:shadow-md transition-shadow group flex flex-col gap-space-xs cursor-pointer border border-outline-variant/20">
                   <div class="flex items-center justify-between">
                     <span class="font-label-badge text-label-badge uppercase px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-bold">
                       PRO • BLOQUE EXCLUSIVO
@@ -130,15 +133,15 @@ window.views.HomeView = {
                     </span>
                   </div>
                   <h4 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors">
-                    El coste computacional real de los modelos fundacionales
+                    ${pro1 ? this._escapeHtml(pro1.titulo) : 'El coste computacional real de los modelos fundacionales'}
                   </h4>
                   <p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
-                    Un desglose pormenorizado del gasto en clusters de aceleración, latencia de inferencia y la viabilidad unitaria de los grandes modelos.
+                    ${pro1 ? this._escapeHtml(pro1.extracto || pro1.subtitulo || (pro1.contenido || '').slice(0, 120) + '...') : 'Un desglose pormenorizado del gasto en clusters de aceleración, latencia de inferencia y la viabilidad unitaria de los grandes modelos.'}
                   </p>
                 </article>
 
                 <!-- Item 2 -->
-                <article onclick="window.app.navegarA('noticia')" class="p-space-md bg-surface-container-lowest rounded-xl shadow-sm hover:shadow-md transition-shadow group flex flex-col gap-space-xs cursor-pointer border border-outline-variant/20">
+                <article onclick="${pro2 ? `window.app.articleController.abrirNoticia(${pro2.id_noticia})` : `window.app.navegarA('noticia')`}" class="p-space-md bg-surface-container-lowest rounded-xl shadow-sm hover:shadow-md transition-shadow group flex flex-col gap-space-xs cursor-pointer border border-outline-variant/20">
                   <div class="flex items-center justify-between">
                     <span class="font-label-badge text-label-badge uppercase px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-bold">
                       PRO • DATASETS CRUDOS
@@ -148,10 +151,10 @@ window.views.HomeView = {
                     </span>
                   </div>
                   <h4 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors">
-                    Análisis Cuantitativo: Costos de Inferencia Marginal vs Calidad
+                    ${pro2 ? this._escapeHtml(pro2.titulo) : 'Análisis Cuantitativo: Costos de Inferencia Marginal vs Calidad'}
                   </h4>
                   <p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
-                    Evaluamos más de 45 millones de tokens en arquitecturas densas frente a modelos de mezcla de expertos (MoE).
+                    ${pro2 ? this._escapeHtml(pro2.extracto || pro2.subtitulo || (pro2.contenido || '').slice(0, 120) + '...') : 'Evaluamos más de 45 millones de tokens en arquitecturas densas frente a modelos de mezcla de expertos (MoE).'}
                   </p>
                 </article>
 

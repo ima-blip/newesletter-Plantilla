@@ -37,6 +37,7 @@ class AppController {
 
     // Escucha cambios de sesión para re-renderizar navbar y vistas activas
     this.store.on('sesion:cambiada', (user) => {
+      this.articleController.resetReaderMode();
       this.actualizarInterfazSesion(user);
       this.reRenderRutaActual();
     });
@@ -131,8 +132,13 @@ class AppController {
       }
 
       case 'noticia': {
-        await this.articleController.cargarUltimaNoticiaPublicada();
+        await Promise.all([
+          this.articleController.cargarUltimaNoticiaPublicada(),
+          this.subscriptionController.sincronizarPreciosYDescuentos()
+        ]);
         const estadoLectura = this.articleController.obtenerEstadoLectura();
+        const mensualClp = this.subscriptionController.preciosConfig?.precio_mensual_clp || 8990;
+        estadoLectura.precioMensualDisplay = `$${Number(mensualClp).toLocaleString('es-CL')} CLP`;
         contenedor.innerHTML = window.views.ArticleView.render(estadoLectura);
         window.views.ArticleView.attachEvents(this);
         break;
