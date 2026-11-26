@@ -67,7 +67,8 @@ class ApiService {
       if (data) return JSON.parse(data);
     } catch (e) {}
 
-    // Semillas iniciales
+    // Semillas iniciales (fechas escalonadas para garantizar orden consistente)
+    const ahora = Date.now();
     const semillas = [
       {
         id_noticia: 1,
@@ -81,14 +82,14 @@ class ApiService {
         estado: 'publicado',
         autor_id: 3,
         autor_nombre: 'Carlos Domínguez',
-        fecha_publicacion: new Date().toISOString(),
-        created_at: new Date().toISOString()
+        fecha_publicacion: new Date(ahora - 7200000).toISOString(),
+        created_at: new Date(ahora - 7200000).toISOString()
       },
       {
         id_noticia: 2,
         titulo: 'El coste computacional real de los modelos fundacionales',
         subtitulo: 'Desglose técnico de clusters de GPU e inferencia',
-        contenido: 'En los datos internos del informe de audiencia de septiembre, se percibe una correlación directa entre el abandono de plataformas centralizadas y la adhesión al boletín monográfico.\n\nLa desintermediación algorítmica exige un pacto directo de mecenazgo cultural.',
+        contenido: 'Hemos aceptado con una docilidad alarmante que la escala bruta de parámetros resolvería por sí sola los límites semánticos de la comprensión máquina. Sin embargo, los balances operativos de los últimos trimestres revelan una fractura silenciosa en la economía unitaria de los modelos fundacionales.\n\nEl diseño de la persuasión tecnológica suele ocultar la factura energética y de memoria que exige sostener una ventana de contexto masiva en producción. Cada consulta encadenada multiplica la latencia de cola y presiona los márgenes de infraestructura.\n\nEn contraposición, las arquitecturas modulares y los sistemas híbridos demuestran que una audiencia técnica crítica exige transparencia sobre latencia, costo marginal por mil tokens y sostenibilidad real de cómputo.\n\nEn los datos internos del informe de audiencia de septiembre (Cuadro 4.2), se percibe una correlación directa entre la adopción de modelos especializados de mezcla de expertos (MoE) y la reducción del 67% en latencia de inferencia frente a transformers densos de 70B parámetros.\n\nLa desintermediación algorítmica exige un pacto directo de mecenazgo cultural y técnico: solo una comunidad de suscriptores independiente puede financiar auditorías reproducibles sin compromisos con proveedores de nube.',
         extracto: 'Un desglose pormenorizado del gasto en clusters de aceleración.',
         imagen_url: '',
         categoria: 'Análisis Técnico',
@@ -96,14 +97,14 @@ class ApiService {
         estado: 'publicado',
         autor_id: 3,
         autor_nombre: 'Carlos Domínguez',
-        fecha_publicacion: new Date().toISOString(),
-        created_at: new Date().toISOString()
+        fecha_publicacion: new Date(ahora - 3600000).toISOString(),
+        created_at: new Date(ahora - 3600000).toISOString()
       },
       {
         id_noticia: 3,
-        titulo: 'Toolkit de Auditoría de Modelos v2.4 disponible',
-        subtitulo: 'Material confidencial para miembros mecenas',
-        contenido: 'Descarga el script de benchmark reproducible en PyTorch, el cuaderno de Jupyter con los pesos crudos y la matriz de cálculo en formato SQLite.',
+        titulo: 'Toolkit de Auditoría de Modelos v2.4: Inferencia y Latencia PRO',
+        subtitulo: 'Material confidencial y benchmarks reproducibles para miembros mecenas',
+        contenido: 'Durante los últimos seis meses hemos auditado más de 45 millones de tokens ejecutados sobre clusters heterogéneos para medir con precisión el costo marginal real de la inferencia en producción.\n\nA diferencia de los reportes comerciales optimizados para presentaciones corporativas, este dossier expone las curvas reales de degradación de latencia bajo concurrencia sostenida y el impacto financiero del ancho de banda de memoria HBM.\n\nLos resultados desmienten la premisa de la economía de escala ilimitada: superado el umbral de los 70 mil millones de parámetros activos, el rendimiento por dólar invertido cae de forma pronunciada en cargas conversacionales.\n\nEn la sección confidencial para Mecenas PRO incluimos el script de benchmark reproducible en PyTorch, el cuaderno de Jupyter con los pesos crudos y la matriz SQLite completa para validar cada métrica en tu propio entorno.\n\nAdemás, adjuntamos el análisis comparativo por proveedor y las recomendaciones de cuantización INT4/FP8 sin pérdida perceptible de precisión semántica.',
         extracto: 'Scripts, notebooks y datasets descargables para mecenas PRO.',
         imagen_url: '',
         categoria: 'Recursos PRO',
@@ -111,8 +112,8 @@ class ApiService {
         estado: 'publicado',
         autor_id: 3,
         autor_nombre: 'Carlos Domínguez',
-        fecha_publicacion: new Date().toISOString(),
-        created_at: new Date().toISOString()
+        fecha_publicacion: new Date(ahora).toISOString(),
+        created_at: new Date(ahora).toISOString()
       }
     ];
     this._saveNoticiasOffline(semillas);
@@ -293,7 +294,10 @@ class ApiService {
     if (this.modoOffline) {
       const publicadas = this._getNoticiasOffline()
         .filter(n => n.estado === 'publicado')
-        .sort((a, b) => new Date(b.fecha_publicacion || b.created_at) - new Date(a.fecha_publicacion || a.created_at));
+        .sort((a, b) =>
+          (new Date(b.fecha_publicacion || b.created_at) - new Date(a.fecha_publicacion || a.created_at)) ||
+          ((b.id_noticia || 0) - (a.id_noticia || 0))
+        );
       return publicadas.length
         ? { exito: true, datos: publicadas[0] }
         : { exito: false, datos: null, mensaje: 'No hay noticias publicadas.' };

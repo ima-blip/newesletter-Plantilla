@@ -27,9 +27,12 @@ class ArticleController {
     }
   }
 
+  limpiarNoticiaEspecifica() {
+    this._noticiaEspecifica = false;
+  }
+
   async cargarUltimaNoticiaPublicada() {
     if (this._noticiaEspecifica && this.ultimaNoticiaPublicada) {
-      this._noticiaEspecifica = false;
       return this.ultimaNoticiaPublicada;
     }
     if (typeof window !== 'undefined' && window.apiService) {
@@ -56,7 +59,7 @@ class ArticleController {
     if (esSandbox && this.simulatedReaderMode) {
       esPro = this.simulatedReaderMode === 'pro';
     } else {
-      esPro = usuario && (usuario.esMecenasPro() || usuario.esAdmin());
+      esPro = Boolean(usuario && (usuario.esMecenasPro() || usuario.esAdmin()));
     }
 
     return {

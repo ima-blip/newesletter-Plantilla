@@ -33,7 +33,7 @@ window.views.NavbarView = {
             <!-- Navegación Primaria con Separación de Visibilidad por Rol (RBAC) -->
             <nav class="hidden lg:flex items-center gap-1" id="main-nav-links">
               <a class="font-body-sm text-body-sm px-space-sm py-space-xs rounded-full cursor-pointer transition-colors" data-path="portada-noticias" onclick="window.app.navegarA('portada-noticias')">Portada / Noticias</a>
-              <a class="font-body-sm text-body-sm px-space-sm py-space-xs rounded-full cursor-pointer transition-colors" data-path="noticia" onclick="window.app.navegarA('noticia')">Ensayo &amp; Lectura</a>
+              <a class="font-body-sm text-body-sm px-space-sm py-space-xs rounded-full cursor-pointer transition-colors" data-path="noticia" onclick="window.app.articleController.limpiarNoticiaEspecifica(); window.app.navegarA('noticia')">Ensayo &amp; Lectura</a>
               <a class="font-body-sm text-body-sm px-space-sm py-space-xs rounded-full cursor-pointer transition-colors" data-path="portal-suscripcion" onclick="window.app.navegarA('portal-suscripcion')">
                 ${user && user.esMecenasPro() ? '★ Membresía PRO' : 'Hazte Mecenas PRO'}
               </a>

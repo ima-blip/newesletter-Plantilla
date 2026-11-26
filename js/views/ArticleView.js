@@ -16,16 +16,180 @@ window.views.ArticleView = {
       .replace(/"/g, '&quot;');
   },
 
+  /**
+   * Segmenta los párrafos de un artículo con paywall según el umbral configurado (RF-02),
+   * garantizando que incluso artículos cortos (1 o 2 párrafos) queden truncados y
+   * nunca expongan el texto completo en el DOM para lectores Freemium o visitantes.
+   */
+  _segmentarContenidoParaPaywall(parrafos, umbralPaywall = 'p3') {
+    const lista = Array.isArray(parrafos) ? parrafos.filter(Boolean) : [];
+    if (lista.length === 0) {
+      return {
+        abiertos: [],
+        difuminados: [
+          'Este análisis continúa en la edición reservada para Mecenas PRO con desglose metodológico completo.'
+        ]
+      };
+    }
+
+    if (lista.length === 1) {
+      const textoUnico = lista[0];
+      const oraciones = textoUnico.split(/(?<=[.!?])\s+/).filter(Boolean);
+      let apertura = '';
+      let resto = '';
+
+      if (oraciones.length >= 2) {
+        apertura = oraciones[0];
+        resto = oraciones.slice(1).join(' ');
+      } else {
+        const palabras = textoUnico.split(/\s+/);
+        const cortePalabras = Math.max(8, Math.floor(palabras.length * 0.45));
+        apertura = palabras.slice(0, cortePalabras).join(' ') + '…';
+        resto = palabras.slice(cortePalabras).join(' ');
+      }
+
+      const teaser = resto.length > 260 ? resto.slice(0, 260) + '…' : resto;
+      return {
+        abiertos: [apertura],
+        difuminados: teaser ? [teaser] : ['Contenido exclusivo reservado para la comunidad de Mecenas PRO.']
+      };
+    }
+
+    let limiteUmbral = 3;
+    if (umbralPaywall === 'p5') limiteUmbral = 5;
+    else if (umbralPaywall === 'data') limiteUmbral = Math.max(1, Math.floor(lista.length / 2));
+
+    // Siempre dejar al menos 1 párrafo detrás de la compuerta de paywall
+    const indiceCorte = Math.max(1, Math.min(limiteUmbral, lista.length - 1));
+    const abiertos = lista.slice(0, indiceCorte);
+    const restantes = lista.slice(indiceCorte, indiceCorte + 2).map(p =>
+      p.length > 220 ? p.slice(0, 220) + '…' : p
+    );
+
+    return {
+      abiertos,
+      difuminados: restantes
+    };
+  },
+
+  _renderPaywallGate({ difuminados, estiloTransicion, umbralPaywall, precioMensualDisplay }) {
+    const esCorteSeco = estiloTransicion === 'corte_seco';
+    const precioMostrar = precioMensualDisplay || '$8.990 CLP';
+    const etiquetaUmbral = umbralPaywall === 'p5' ? 'Párrafo #5' : (umbralPaywall === 'data' ? 'Bloque de Datos' : 'Párrafo #3');
+    const previewParrafos = (difuminados && difuminados.length)
+      ? difuminados
+      : ['En los datos internos del informe de audiencia se percibe una correlación directa entre la autonomía editorial y el mecenazgo directo.'];
+
+    return `
+      <!-- VISTA FREEMIUM CON DIFUMINADO PROGRESIVO O CORTE SECO Y TARJETA TEASER (RF-02 Escenario 2.2) -->
+      <div class="relative mt-space-md" id="freemium-paywall-gate" data-estilo="${esCorteSeco ? 'corte_seco' : 'difuminado'}">
+        ${esCorteSeco ? `
+          <div class="flex items-center gap-3 my-space-md">
+            <div class="flex-1 border-t-2 border-dashed border-primary/40"></div>
+            <span class="font-label-badge text-label-badge uppercase px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container font-bold tracking-wider">
+              Límite Freemium (${etiquetaUmbral}) • Corte Seco
+            </span>
+            <div class="flex-1 border-t-2 border-dashed border-primary/40"></div>
+          </div>
+        ` : `
+          <!-- Texto con difuminado CSS progresivo (ilegible para lectores Freemium) -->
+          <div class="paywall-blur-container max-h-48 select-none pointer-events-none" aria-hidden="true">
+            ${previewParrafos.slice(0, 2).map((p, idx) => `
+              <p class="font-body-md text-body-md text-on-surface ${idx === 0 ? 'paywall-blur-layer-1 blur-[5px]' : 'paywall-blur-layer-2 blur-[7px] mt-4'}">
+                ${this._escapeHtml(p)}
+              </p>
+            `).join('')}
+            <!-- Gradiente de Difuminado hacia el fondo -->
+            <div class="absolute inset-0 paywall-blur-gradient bg-gradient-to-b from-surface/10 via-surface/80 to-surface"></div>
+          </div>
+        `}
+
+        <!-- Tarjeta de Conversión Teaser de Paywall de Alto Contraste -->
+        <div class="relative z-10 ${esCorteSeco ? 'mt-space-sm' : '-mt-8'} rounded-2xl bg-inverse-surface text-inverse-on-surface p-space-lg shadow-xl overflow-hidden border border-outline/30">
+          <div class="absolute -right-16 -top-16 w-64 h-64 bg-primary/20 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-space-lg relative z-10">
+            <div class="flex flex-col gap-space-xs max-w-xl">
+              <div class="flex items-center gap-space-xs">
+                <span class="material-symbols-outlined text-primary text-[20px]">lock</span>
+                <span class="font-label-badge text-label-badge uppercase text-inverse-primary tracking-widest font-bold">
+                  Pase Exclusivo de Mecenas PRO
+                </span>
+              </div>
+              <h3 class="font-headline-md text-headline-md text-surface-container-lowest">
+                Este ensayo continúa para la comunidad de mecenas.
+              </h3>
+              <p class="font-body-sm text-body-sm text-outline-variant">
+                Desbloquea de inmediato las 3.200 palabras restantes de la monografía, los gráficos de inferencia de GPU y el toolkit técnico descargable.
+              </p>
+
+              <ul class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-2 text-xs font-metadata text-inverse-on-surface">
+                <li class="flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-primary text-[15px]">check_circle</span>
+                  <span>Monografía completa (3.200 palabras)</span>
+                </li>
+                <li class="flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-primary text-[15px]">check_circle</span>
+                  <span>Podcast confidencial con autores</span>
+                </li>
+                <li class="flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-primary text-[15px]">check_circle</span>
+                  <span>Datasets crudos y benchmarks</span>
+                </li>
+                <li class="flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-primary text-[15px]">check_circle</span>
+                  <span>Toolkit de Auditoría de Modelos v2.4</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="flex flex-col gap-space-xs shrink-0 items-center md:items-end">
+              <button onclick="window.app.navegarA('portal-suscripcion')" class="w-full md:w-auto px-space-lg py-3 rounded-full bg-primary hover:bg-primary-container text-on-primary font-label-badge text-label-badge uppercase font-bold tracking-wider transition-all shadow-md text-center">
+                Unirme como Mecenas (${precioMostrar} / mes)
+              </button>
+              <span class="font-metadata text-[11px] text-outline-variant">Sin permanencia • Cancela en un clic</span>
+            </div>
+          </div>
+        </div>
+
+        ${this._renderAgoraBloqueado()}
+      </div>
+    `;
+  },
+
+  _renderAgoraBloqueado() {
+    return `
+      <!-- Pie con comentarios bloqueados -->
+      <div class="mt-space-md p-space-md bg-surface-container-low rounded-2xl flex items-center justify-between border border-outline-variant/30">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-outline text-[20px]">lock</span>
+          <span class="font-headline-sm text-sm text-on-surface-variant font-medium">Debate Exclusivo Comunidad PRO</span>
+        </div>
+        <button onclick="window.app.navegarA('portal-suscripcion')" class="font-metadata text-xs uppercase text-primary font-bold hover:underline">
+          Desbloquear Ágora
+        </button>
+      </div>
+    `;
+  },
+
   render(estadoLectura) {
-    const { usuario, newsletter, ultimaNoticia, esPro, esSandbox, modoSimulado, bloques, umbralPaywall, estiloTransicion } = estadoLectura;
+    const {
+      newsletter,
+      ultimaNoticia,
+      esPro,
+      esSandbox,
+      bloques = [],
+      umbralPaywall = 'p3',
+      estiloTransicion = 'difuminado',
+      precioMensualDisplay = '$8.990 CLP'
+    } = estadoLectura;
 
     const usaNoticiaPublicada = Boolean(ultimaNoticia && ultimaNoticia.titulo);
-    const tituloMostrar = usaNoticiaPublicada ? this._escapeHtml(ultimaNoticia.titulo) : newsletter.titulo;
+    const tituloMostrar = usaNoticiaPublicada ? this._escapeHtml(ultimaNoticia.titulo) : this._escapeHtml(newsletter.titulo);
     const subtituloMostrar = usaNoticiaPublicada
       ? this._escapeHtml(ultimaNoticia.subtitulo || ultimaNoticia.extracto || '')
-      : newsletter.descripcion;
+      : this._escapeHtml(newsletter.descripcion);
     const categoriaMostrar = usaNoticiaPublicada ? this._escapeHtml(ultimaNoticia.categoria || 'Actualidad') : 'Crítica Estructural';
-    const autorMostrar = usaNoticiaPublicada ? this._escapeHtml(ultimaNoticia.autor_nombre || 'Equipo Atelier') : newsletter.autorPrincipal;
+    const autorMostrar = usaNoticiaPublicada ? this._escapeHtml(ultimaNoticia.autor_nombre || 'Equipo Atelier') : this._escapeHtml(newsletter.autorPrincipal);
     const fechaMostrar = usaNoticiaPublicada && ultimaNoticia.fecha_publicacion
       ? new Date(ultimaNoticia.fecha_publicacion).toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' })
       : 'Noviembre 2026';
@@ -36,14 +200,53 @@ window.views.ArticleView = {
     const parrafosNoticia = usaNoticiaPublicada
       ? String(ultimaNoticia.contenido || '').split(/\n+/).map(p => p.trim()).filter(Boolean)
       : [];
-    const requierePaywall = usaNoticiaPublicada ? (Boolean(ultimaNoticia.es_premium) && !esPro) : !esPro;
 
-    // Bloque 1 (Abierto)
-    const b1 = bloques[0] || {};
-    // Bloques 2, 3, 4 (PRO)
-    const b2 = bloques[1] || {};
-    const b3 = bloques[2] || {};
-    const b4 = bloques[3] || {};
+    const bloquesAbiertos = bloques.filter(b => !b.esPremium);
+    const bloquesPro = bloques.filter(b => b.esPremium);
+    const esArticuloPremium = usaNoticiaPublicada
+      ? Boolean(ultimaNoticia.es_premium)
+      : bloquesPro.length > 0;
+    const requierePaywall = esArticuloPremium && !esPro;
+
+    let parrafosVisibles = [];
+    let parrafosDifuminados = [];
+
+    if (usaNoticiaPublicada) {
+      if (requierePaywall) {
+        const seg = this._segmentarContenidoParaPaywall(parrafosNoticia, umbralPaywall);
+        parrafosVisibles = seg.abiertos;
+        parrafosDifuminados = seg.difuminados;
+      } else {
+        parrafosVisibles = parrafosNoticia;
+      }
+    } else {
+      const fuenteAbierta = bloquesAbiertos.length ? bloquesAbiertos : bloques.slice(0, 1);
+      const parrafosDesdeBloques = fuenteAbierta
+        .flatMap(b => String(b.contenido || '').split(/\n+/).map(p => p.trim()).filter(Boolean));
+
+      if (requierePaywall) {
+        if (bloquesAbiertos.length === 0) {
+          const seg = this._segmentarContenidoParaPaywall(parrafosDesdeBloques, umbralPaywall);
+          parrafosVisibles = seg.abiertos;
+          parrafosDifuminados = seg.difuminados;
+        } else {
+          parrafosVisibles = parrafosDesdeBloques;
+          const primerBloquePro = bloquesPro[0];
+          const proTexto = primerBloquePro ? String(primerBloquePro.contenido || '').split(/\n+/).map(p => p.trim()).filter(Boolean) : [];
+          parrafosDifuminados = proTexto.slice(0, 2).map(p => p.length > 220 ? p.slice(0, 220) + '…' : p);
+        }
+      } else {
+        parrafosVisibles = parrafosDesdeBloques;
+      }
+    }
+
+    // Bloques 2, 3, 4 (PRO) para vista newsletter / recursos PRO
+    const b2 = bloquesPro[0] || bloques[1] || {};
+    const b3 = bloquesPro[1] || bloques[2] || {};
+
+    const estadoAccesoTexto = esPro
+      ? 'ACCESO TOTAL PRO'
+      : (requierePaywall ? 'BLOQUEADO CON PAYWALL' : 'LECTURA ABIERTA (FREEMIUM)');
 
     return `
       <div class="flex flex-col w-full pt-28">
@@ -54,7 +257,7 @@ window.views.ArticleView = {
             <div class="flex items-center gap-space-sm min-w-0">
               <span class="w-2.5 h-2.5 rounded-full ${esPro ? 'bg-primary' : 'bg-tertiary'} animate-pulse"></span>
               <span class="font-metadata text-metadata uppercase tracking-wider text-on-surface-variant truncate">
-                Estado de Acceso: <strong class="${esPro ? 'text-primary' : 'text-tertiary'}">${esPro ? 'ACCESO TOTAL PRO' : 'BLOQUEADO CON PAYWALL'}</strong>
+                Estado de Acceso: <strong class="${esPro ? 'text-primary' : 'text-tertiary'}">${estadoAccesoTexto}</strong>
               </span>
               <span class="hidden sm:inline text-outline-variant">•</span>
               <span class="hidden sm:inline font-metadata text-metadata text-outline">
@@ -93,7 +296,7 @@ window.views.ArticleView = {
               <span class="text-outline-variant font-metadata">•</span>
               <div class="flex items-center gap-1 font-metadata text-metadata text-on-surface-variant">
                 <span class="material-symbols-outlined text-[15px]">schedule</span>
-                <span>${usaNoticiaPublicada && ultimaNoticia.es_premium ? 'Edición Mecenas PRO' : 'Lectura Abierta'}</span>
+                <span>${esArticuloPremium ? 'Edición Mecenas PRO' : 'Lectura Abierta'}</span>
               </div>
             </div>
 
@@ -136,48 +339,41 @@ window.views.ArticleView = {
             </div>
           </div>
 
-          <!-- BLOQUE 1: CONTENIDO ABIERTO A TODOS -->
+          <!-- BLOQUE 1: CONTENIDO ABIERTO / EXTRACTO INICIAL -->
           <div class="font-body-md text-body-md text-on-surface space-y-space-md leading-relaxed">
             <div class="flex items-center gap-2 mb-2">
               <span class="font-label-badge text-label-badge uppercase px-2 py-0.5 rounded-full bg-surface-container text-on-surface font-bold">
-                ${usaNoticiaPublicada ? (ultimaNoticia.es_premium ? 'BLOQUE 01 • EXTRACTO INICIAL' : 'ARTÍCULO COMPLETO • ACCESO ABIERTO') : 'BLOQUE 01 • ABIERTO A TODOS'}
+                ${esArticuloPremium ? 'BLOQUE 01 • EXTRACTO INICIAL' : 'ARTÍCULO COMPLETO • ACCESO ABIERTO'}
               </span>
             </div>
 
-            ${usaNoticiaPublicada ? `
-              ${(requierePaywall ? parrafosNoticia.slice(0, 2) : parrafosNoticia).map((p, idx) => `
-                <p class="${idx === 0 ? 'first-letter:text-5xl first-letter:font-headline-lg first-letter:float-left first-letter:mr-3 first-letter:text-primary' : ''}">
-                  ${this._escapeHtml(p)}
-                </p>
-              `).join('')}
-            ` : `
-            <p class="first-letter:text-5xl first-letter:font-headline-lg first-letter:float-left first-letter:mr-3 first-letter:text-primary">
-              Hemos aceptado con una docilidad alarmante que el pensamiento debe sincronizarse con los impulsos nerviosos de un feed algorítmico. Durante la última década, las interfaces no han sido diseñadas para expandir la comprensión del sujeto contemporáneo, sino para drenar metódicamente su capacidad de sostener una sola idea compleja durante más de cuatro minutos seguidos.
-            </p>
+            ${parrafosVisibles.map((p, idx) => `
+              <p class="${idx === 0 ? 'first-letter:text-5xl first-letter:font-headline-lg first-letter:float-left first-letter:mr-3 first-letter:text-primary' : ''}">
+                ${this._escapeHtml(p)}
+              </p>
+            `).join('')}
 
-            <p>
-              El diseño de la persuasión —heredero bastardo del conductismo skinneriano y afinado en los laboratorios de Silicon Valley— no busca informar ni suscitar deleite intelectual; su único vector de optimización es la permanencia desasosegada. El videojuego hipermonetizado, el portal periodístico infestado de balizas rastreadoras y el videoensayo de quince segundos comparten la misma topología carcelaria: la promesa inminente de una epifanía que nunca se materializa.
-            </p>
-
-            <!-- Cita Tipográfica Inspirada en Anait & Draugr -->
-            <figure class="my-space-lg p-space-lg rounded-2xl bg-surface-container-low shadow-sm border-l-4 border-primary">
-              <span class="material-symbols-outlined text-tertiary-container text-4xl mb-space-xs block">format_quote</span>
-              <blockquote class="font-headline-md text-headline-md text-on-surface leading-tight tracking-tight">
-                «El regreso a la lectura lenta y austera no es nostalgia elitista: es una trinchera de soberanía cognitiva frente al asalto de la plataforma rentista.»
-              </blockquote>
-              <figcaption class="mt-space-sm font-metadata text-metadata uppercase tracking-widest text-primary font-bold">
-                — Fragmento del Manifiesto Editorial Atelier, 2026
-              </figcaption>
-            </figure>
-
-            <p>
-              Cuando la retención se convierte en el único índice de éxito bursátil, el lenguaje se deteriora. El titular deviene en señuelo neuroquímico; el argumento cede el paso al espasmo emocional inmediato. En contraposición, proyectos editoriales de resistencia demuestran que una audiencia crítica no demanda artificios cinéticos: reclama rigor, prosa pausada y una interlocución honesta que no la trate como una métrica de conversión pasiva.
-            </p>
-            `}
+            ${!usaNoticiaPublicada && parrafosVisibles.length >= 2 ? `
+              <!-- Cita Tipográfica Inspirada en Anait & Draugr -->
+              <figure class="my-space-lg p-space-lg rounded-2xl bg-surface-container-low shadow-sm border-l-4 border-primary">
+                <span class="material-symbols-outlined text-tertiary-container text-4xl mb-space-xs block">format_quote</span>
+                <blockquote class="font-headline-md text-headline-md text-on-surface leading-tight tracking-tight">
+                  «El regreso a la lectura lenta y austera no es nostalgia elitista: es una trinchera de soberanía cognitiva frente al asalto de la plataforma rentista.»
+                </blockquote>
+                <figcaption class="mt-space-sm font-metadata text-metadata uppercase tracking-widest text-primary font-bold">
+                  — Fragmento del Manifiesto Editorial Atelier, 2026
+                </figcaption>
+              </figure>
+            ` : ''}
           </div>
 
           <!-- COMPUERTA DE PAYWALL / ZONA PRO DIFERENCIADA (RF-02) -->
-          ${!requierePaywall ? `
+          ${requierePaywall ? this._renderPaywallGate({
+            difuminados: parrafosDifuminados,
+            estiloTransicion,
+            umbralPaywall,
+            precioMensualDisplay
+          }) : (esPro ? `
             <!-- VISTA MECENAS PRO: ACCESO COMPLETO SIN CORTES (Escenario 2.3) -->
             <div class="mt-space-lg space-y-space-md border-t-2 border-primary/30 pt-space-lg">
               <div class="flex items-center justify-between p-space-sm bg-primary-fixed/30 rounded-xl border border-primary/20">
@@ -192,14 +388,15 @@ window.views.ArticleView = {
                 </span>
               </div>
 
+              ${!usaNoticiaPublicada ? `
               <!-- Bloque 02 PRO -->
               <div class="p-space-md bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/20">
                 <span class="font-label-badge text-label-badge uppercase px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-bold mb-2 inline-block">
                   BLOQUE 02 • PRO RESTRICTED
                 </span>
-                <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">${b2.titulo || 'Desglose Técnico de Infraestructura'}</h3>
+                <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">${this._escapeHtml(b2.titulo || 'Desglose Técnico de Infraestructura')}</h3>
                 <p class="font-body-md text-body-md text-on-surface leading-relaxed">
-                  ${b2.contenido || 'En los datos internos del informe de audiencia de septiembre, se percibe una correlación directa entre el abandono de plataformas centralizadas y la adhesión al boletín monográfico.'}
+                  ${this._escapeHtml(b2.contenido || 'En los datos internos del informe de audiencia de septiembre, se percibe una correlación directa entre el abandono de plataformas centralizadas y la adhesión al boletín monográfico.')}
                 </p>
               </div>
 
@@ -208,9 +405,9 @@ window.views.ArticleView = {
                 <span class="font-label-badge text-label-badge uppercase px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-bold mb-2 inline-block">
                   BLOQUE 03 • ANÁLISIS CUANTITATIVO
                 </span>
-                <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">${b3.titulo || 'Costos de Inferencia Marginal vs Calidad'}</h3>
+                <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">${this._escapeHtml(b3.titulo || 'Costos de Inferencia Marginal vs Calidad')}</h3>
                 <p class="font-body-md text-body-md text-on-surface leading-relaxed mb-space-md">
-                  ${b3.contenido || 'Evaluamos más de 45 millones de tokens en arquitecturas densas frente a modelos de mezcla de expertos (MoE).'}
+                  ${this._escapeHtml(b3.contenido || 'Evaluamos más de 45 millones de tokens en arquitecturas densas frente a modelos de mezcla de expertos (MoE).')}
                 </p>
 
                 <!-- Mini Gráfico de Latencia y Costos -->
@@ -238,11 +435,12 @@ window.views.ArticleView = {
                   </div>
                 </div>
               </div>
+              ` : ''}
 
               <!-- Bloque 04 PRO: Toolkit de Descargas -->
               <div class="p-space-md bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/20">
                 <span class="font-label-badge text-label-badge uppercase px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-bold mb-2 inline-block">
-                  BLOQUE 04 • RECURSOS CONFIDENCIALES
+                  RECURSOS CONFIDENCIALES PRO
                 </span>
                 <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">Descargas y Archivos de Investigación</h3>
                 <p class="font-body-sm text-body-sm text-on-surface-variant mb-space-md">
@@ -282,79 +480,11 @@ window.views.ArticleView = {
               </div>
             </div>
           ` : `
-            <!-- VISTA FREEMIUM CON DIFUMINADO Y TARJETA TEASER DE PAYWALL (Escenario 2.2) -->
-            <div class="relative mt-space-md" id="freemium-paywall-gate">
-              <!-- Texto con difuminado CSS progresivo tras el párrafo 3 -->
-              <div class="relative overflow-hidden max-h-48 select-none pointer-events-none">
-                <p class="font-body-md text-body-md text-on-surface opacity-60">
-                  En los datos internos del informe de audiencia de septiembre (véase Cuadro 4.2), se percibe una correlación directa entre el abandono de plataformas centralizadas y la adhesión al boletín monográfico. Los lectores que sostienen este espacio no buscan primicias de gabinete de prensa ni notas prefabricadas. La anatomía del desmantelamiento de los medios tradicionales responde a un estrangulamiento deliberado de márgenes operativos...
-                </p>
-                <p class="font-body-md text-body-md text-on-surface opacity-30 mt-4">
-                  La desintermediación algorítmica exige un pacto directo de mecenazgo cultural. Para los desarrolladores de videojuegos y creadores de contenido documental, el modelo de suscripción limpia no es una opción de negocio secundaria, sino la única condición de posibilidad de su autonomía discursiva...
-                </p>
-                <!-- Gradiente de Difuminado hacia el fondo -->
-                <div class="absolute inset-0 bg-gradient-to-b from-transparent via-surface/80 to-surface"></div>
-              </div>
-
-              <!-- Tarjeta de Conversión Teaser de Paywall de Alto Contraste -->
-              <div class="relative z-10 -mt-8 rounded-2xl bg-inverse-surface text-inverse-on-surface p-space-lg shadow-xl overflow-hidden border border-outline/30">
-                <div class="absolute -right-16 -top-16 w-64 h-64 bg-primary/20 rounded-full blur-3xl pointer-events-none"></div>
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-space-lg relative z-10">
-                  <div class="flex flex-col gap-space-xs max-w-xl">
-                    <div class="flex items-center gap-space-xs">
-                      <span class="material-symbols-outlined text-primary text-[20px]">lock</span>
-                      <span class="font-label-badge text-label-badge uppercase text-inverse-primary tracking-widest font-bold">
-                        Pase Exclusivo de Mecenas PRO
-                      </span>
-                    </div>
-                    <h3 class="font-headline-md text-headline-md text-surface-container-lowest">
-                      Este ensayo continúa para la comunidad de mecenas.
-                    </h3>
-                    <p class="font-body-sm text-body-sm text-outline-variant">
-                      Desbloquea de inmediato las 3.200 palabras restantes de la monografía, los gráficos de inferencia de GPU y el toolkit técnico descargable.
-                    </p>
-                    
-                    <ul class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-2 text-xs font-metadata text-inverse-on-surface">
-                      <li class="flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-primary text-[15px]">check_circle</span>
-                        <span>Monografía completa (3.200 palabras)</span>
-                      </li>
-                      <li class="flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-primary text-[15px]">check_circle</span>
-                        <span>Podcast confidencial con autores</span>
-                      </li>
-                      <li class="flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-primary text-[15px]">check_circle</span>
-                        <span>Datasets crudos y benchmarks</span>
-                      </li>
-                      <li class="flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-primary text-[15px]">check_circle</span>
-                        <span>Toolkit de Auditoría de Modelos v2.4</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div class="flex flex-col gap-space-xs shrink-0 items-center md:items-end">
-                    <button onclick="window.app.navegarA('portal-suscripcion')" class="w-full md:w-auto px-space-lg py-3 rounded-full bg-primary hover:bg-primary-container text-on-primary font-label-badge text-label-badge uppercase font-bold tracking-wider transition-all shadow-md text-center">
-                      Unirme como Mecenas ($8.990 CLP / mes)
-                    </button>
-                    <span class="font-metadata text-[11px] text-outline-variant">Sin permanencia • Cancela en un clic</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Pie con comentarios bloqueados -->
-              <div class="mt-space-md p-space-md bg-surface-container-low rounded-2xl flex items-center justify-between border border-outline-variant/30">
-                <div class="flex items-center gap-2">
-                  <span class="material-symbols-outlined text-outline text-[20px]">lock</span>
-                  <span class="font-headline-sm text-sm text-on-surface-variant font-medium">Debate Exclusivo Comunidad PRO</span>
-                </div>
-                <button onclick="window.app.navegarA('portal-suscripcion')" class="font-metadata text-xs uppercase text-primary font-bold hover:underline">
-                  Desbloquear Ágora
-                </button>
-              </div>
+            <!-- ARTÍCULO ABIERTO LEÍDO POR VISITANTE O FREEMIUM (Sin acceso a Zona PRO ni Ágora) -->
+            <div class="mt-space-lg border-t border-outline-variant/20 pt-space-md">
+              ${this._renderAgoraBloqueado()}
             </div>
-          `}
+          `)}
         </article>
       </div>
     `;
